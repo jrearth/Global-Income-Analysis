@@ -1,0 +1,64 @@
+## ACR == 3 - lot size of 10 or more acres
+## AGS == 6 - $10000+ of Sales of Agricultural sales
+
+## Creating logical vector
+agricultureLogical <- with(data, ACR == 3 & AGS ==6)
+## first 3 values of which on that vector
+which(agricultureLogical)
+
+
+
+imgURL <- "https://d396qusza40orc.cloudfront.net/getdata%2Fjeff.jpg"
+imgFile <- tempfile()
+download.file(imgURL, imgFile, method = "curl")
+
+## Read file
+img <- readJPEG(imgFile, native = TRUE)
+## Get quantiles at 
+quantile(img, probs = c(x,x))
+
+
+
+gdpURL <- "https://d396qusza40orc.cloudfront.net/getdata%2Fdata%2FGDP.csv"
+eduURL <- "https://d396qusza40orc.cloudfront.net/getdata%2Fdata%2FEDSTATS_Country.csv"
+gdpFile <- tempfile()
+eduFile <- tempfile()
+
+download.file(gdpURL, gdpFile, method = "curl")
+download.file(eduURL, eduFile, method = "curl")
+
+## Read 190 ranked countries
+gdpData <- read.csv(gdpFile, skip = 5, nrows = 190, stringsAsFactors = F, header = F)
+eduData <- read.csv(eduFile, stringsAsFactors = F)
+
+## Subset only needed data, name columns in gdpData and convert GDP Value to numeric
+gdpData <- gdpData[, c(1, 2, 4, 5)]
+colnames(gdpData) <- c("CountryCode", "Rank", "Country.Name", "GDP.Value")
+gdpData$GDP.Value <- as.numeric(gsub(",", "", gdpData$GDP.Value))
+
+## Merge data by country codes
+matchedData <- merge(gdpData, eduData, by.x = "CountryCode", by.y = "CountryCode")
+## Number of matched countries
+dim(matchedData)[1]
+
+## Arrange by GDP rank (descending) and get the name of countries in order 
+library(plyr)
+arrange(matchedData, desc(Rank))[13, 3]
+
+
+
+## Subset "High income: OECD" and calculate the mean GDP Rank
+mean(subset(matchedData, Income.Group %in% "High income: OECD", select = c(Rank))$Rank)
+## [1] 32.96667
+
+## Subset "High income: nonOECD"
+mean(subset(matchedData, Income.Group %in% "High income: nonOECD", select = c(Rank))$Rank)
+## [1] 91.91304
+
+
+library(Hmisc)
+## Cut Ranks into 5 groups and store as factor variable
+matchedData$Rank.Groups = cut2(matchedData$Rank, g = 5)
+## Build a table of Income Groups across Rank Groups
+table(matchedData$Income.Group, matchedData$Rank.Groups)
+
